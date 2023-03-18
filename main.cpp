@@ -7,10 +7,22 @@
 
 #include <array>
 #include <vector>
+#include <string>
+#include <random>
 
 #define DETERMINISTIC() false
 
+static const int c_1DTestCount = 100;
+static const int c_1DTestPointCount = 1000;
+static const float c_1DTestControlPointMin = -10.0f;
+static const float c_1DTestControlPointMax = 10.0f;
+
 typedef std::array<float, 2> float2;
+
+float Lerp(float A, float B, float t)
+{
+	return A * (1.0f - t) + B * t;
+}
 
 pcg32_random_t GetRNG()
 {
@@ -31,6 +43,11 @@ float RandomFloat01(pcg32_random_t& rng)
 	return ldexpf((float)pcg32_random_r(&rng), -32);
 }
 
+float RandomFloatRange(pcg32_random_t& rng, float min, float max)
+{
+	return Lerp(min, max, RandomFloat01(rng));
+}
+
 // https://blog.demofox.org/2017/10/01/calculating-the-distance-between-points-in-wrap-around-toroidal-space/
 float DistanceWrap(const float2& A, const float2& B)
 {
@@ -41,9 +58,58 @@ float DistanceWrap(const float2& A, const float2& B)
 	return std::sqrt(dx * dx + dy * dy);
 }
 
-double Lerp(double A, double B, double t)
+// A,B,C,D are control points.
+// t is a value between 0 and 1.
+float Evaluate1DCubicBezier(float A, float B, float C, float D, float t)
 {
-	return A * (1.0 - t) + B * t;
+	float s = 1.0f - t;
+	return
+		A * s * s * s * 1.0f +
+		B * s * s * t * 3.0f +
+		C * s * t * t * 3.0f +
+		D * t * t * t * 1.0f;
+}
+
+void Do1DTests()
+{
+	pcg32_random_t rng = GetRNG();
+
+	struct Noise
+	{
+		const char* label;
+	};
+
+	Noise noiseTypes[] =
+	{
+		{ "Regular - Ends" },
+		{ "Regular - Left" },
+		{ "Regular - Right" },
+		{ "Regular - Center" },
+		{ "Regular - Equal" },
+		{ "White" },
+		{ "Stratified" },
+		{ "Blue - Wrap" },
+		{ "Blue - No Wrap" },
+		{ "Blue - Edge" },
+		{ "Blue - Half Edge" },
+	};
+
+	for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+	{
+		// Generate a random 1d Bezier curve
+		float A = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+		float B = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+		float C = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+		float D = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+
+		for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+		{
+			for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+			{
+
+			}
+		}
+	}
 }
 
 int main(int argc, char** argv)
@@ -70,6 +136,8 @@ TODO:
 * Integrate random Bezier functions
 * show RMSE at each sample
 
+* make CSV
+* draw some low point count numberline for each type of noise, to show it on the blog post.
 
 ----- 2D sampling -----
 
