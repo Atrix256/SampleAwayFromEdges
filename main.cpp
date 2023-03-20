@@ -92,7 +92,7 @@ float Evaluate1DCubicBezier(float A, float B, float C, float D, float t)
 		D * 1.0f * t * t * t;
 }
 
-// TODO: can we combine things to make it less computation?
+// Not the most efficient, just did an integration of each term
 float IndefiniteIntegral1DCubicBezier(float A, float B, float C, float D, float t)
 {
 	float s = 1.0f - t;
@@ -109,6 +109,29 @@ float IndefiniteIntegral1DCubicBezier(float A, float B, float C, float D, float 
 float Integral1DCubicBezier(float A, float B, float C, float D)
 {
 	return IndefiniteIntegral1DCubicBezier(A, B, C, D, 1.0f) - IndefiniteIntegral1DCubicBezier(A, B, C, D, 0.0f);
+}
+
+template <size_t N>
+float EvaluateLinearPiecewise(const float(&pieces)[N], float t)
+{
+	int numPieces = N / 2;
+	float pieceIndexF = t * float(numPieces);
+	int pieceIndex = std::min(int(pieceIndexF), numPieces - 1);
+	float pieceT = pieceIndexF - float(pieceIndex);
+	return Lerp(pieces[pieceIndex * 2], pieces[pieceIndex * 2 + 1], pieceT);
+}
+
+template <size_t N>
+float IntegralLinearPiecewise(const float(&pieces)[N])
+{
+	int numPieces = N / 2;
+	float ret = 0.0f;
+	for (int i = 0; i < numPieces; ++i)
+	{
+		float averageY = (pieces[i * 2] + pieces[i * 2 + 1]) / 2.0f; // get the average height of the piece
+		ret += averageY / float(numPieces); // scale by the width of the piece
+	}
+	return ret;
 }
 
 std::vector<float> Generate1D_Regular_Ends(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
@@ -456,6 +479,120 @@ void Do1DTests()
 		}
 	}
 
+	// non smooth tests
+	{
+		printf("Non Smooth Functions...\n");
+
+		// for each test
+		std::atomic<int> testsDone = 0;
+		int lastPercent = -1;
+		#pragma omp parallel for
+		for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+		{
+			int threadId = omp_get_thread_num();
+			if (threadId == 0)
+			{
+				int percent = int(100.0f * float(testsDone.load()) / float(c_1DTestCount));
+				if (lastPercent != percent)
+				{
+					lastPercent = percent;
+					printf("\r%i%%", percent);
+				}
+			}
+
+			// Generate a random 1d Bezier curve
+			float points[8] = {
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax)
+			};
+
+			// Calculate the definite integral of the bezier curve, between 0 and 1
+			const float c_actualValue = IntegralLinearPiecewise(points);
+
+			// for each type of noise
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+			{
+				Noise& noise = noiseTypes[noiseIndex];
+
+				// for each sample count in the test
+				std::vector<float> samples;
+				for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+				{
+					// generate the samples
+					samples = noise.Generate(rng, pointIndex + 1, samples);
+
+					// integrate!
+					float yAvg = 0.0f;
+					for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
+					{
+						float y = EvaluateLinearPiecewise(points, samples[sampleIndex]);
+						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
+					}
+
+					// store the error
+					noise.error[testIndex * c_1DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
+				}
+			}
+			testsDone.fetch_add(1);
+		}
+		printf("\r100%%\n");
+
+		// Gather the results
+		{
+			#pragma omp parallel for
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+			{
+				Noise& noise = noiseTypes[noiseIndex];
+				for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+				{
+					for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+					{
+						float error = noise.error[testIndex * c_1DTestPointCount + pointIndex];
+						noise.avgErrorAtSamples[pointIndex] = Lerp(noise.avgErrorAtSamples[pointIndex], error, 1.0f / float(testIndex + 1));
+						noise.avgErrorSqAtSamples[pointIndex] = Lerp(noise.avgErrorSqAtSamples[pointIndex], error * error, 1.0f / float(testIndex + 1));
+					}
+				}
+			}
+		}
+
+		// Write out the 1d results CSV
+		{
+			FILE* file = nullptr;
+			fopen_s(&file, "out/1DResultsNonSmooth.csv", "wb");
+
+			// for each sample count
+			for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+			{
+				// write the csv header
+				if (pointIndex == 0)
+				{
+					fprintf(file, "\"samples\"");
+					for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+						fprintf(file, ",\"%s\"", noiseTypes[noiseIndex].label);
+					fprintf(file, "\n");
+				}
+
+				// write the rmse
+				fprintf(file, "\"%i\"", pointIndex + 1);
+				for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+				{
+					Noise& noise = noiseTypes[noiseIndex];
+					float rmse = std::sqrt(noise.avgErrorSqAtSamples[pointIndex] - noise.avgErrorAtSamples[pointIndex] * noise.avgErrorAtSamples[pointIndex]);
+					fprintf(file, ",\"%f\"", rmse);
+				}
+				fprintf(file, "\n");
+			}
+
+			fclose(file);
+		}
+	}
+
 	// write out example sample points
 	{
 		// generate the noise types
@@ -501,7 +638,6 @@ int main(int argc, char** argv)
 /*
 TODO:
 
-! do a random non smooth function. random piecewise linear with 4 pieces or something?
 * make numberlines from the 1d point csv
 * make different graphs for different purposes? like the regular ones together, and the random based ones together? can't comapre them tho. maybe compare best? dunno
 
