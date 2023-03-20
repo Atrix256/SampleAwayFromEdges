@@ -10,16 +10,17 @@
 #include <string>
 #include <random>
 #include <direct.h>
+#include <algorithm>
+#include <omp.h>
+#include <atomic>
 
 #define DETERMINISTIC() false
 
-// TODO: higher point count? and OMP to make it happen
-
-static const int c_1DTestCount = 100;
-static const int c_1DTestPointCount = 100;
-static const float c_1DTestControlPointMin = -10.0f;
-static const float c_1DTestControlPointMax = 10.0f;
-static const int c_1DNumPointsReported = 5;
+static const int	c_1DTestCount = 1000;
+static const int	c_1DTestPointCount = 200;
+static const float	c_1DTestControlPointMin = -10.0f;
+static const float	c_1DTestControlPointMax = 10.0f;
+static const int	c_1DNumPointsReported = 5;
 
 typedef std::array<float, 1> float1;
 typedef std::array<float, 2> float2;
@@ -110,7 +111,7 @@ float Integral1DCubicBezier(float A, float B, float C, float D)
 	return IndefiniteIntegral1DCubicBezier(A, B, C, D, 1.0f) - IndefiniteIntegral1DCubicBezier(A, B, C, D, 0.0f);
 }
 
-std::vector<float> Generate1D_Regular_Ends(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Regular_Ends(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
 	std::vector<float> ret(numSamples, 0.0f);
 	if (numSamples > 1)
@@ -121,7 +122,7 @@ std::vector<float> Generate1D_Regular_Ends(pcg32_random_t& rng, int numSamples)
 	return ret;
 }
 
-std::vector<float> Generate1D_Regular_Left(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Regular_Left(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
 	std::vector<float> ret(numSamples);
 	for (int i = 0; i < numSamples; ++i)
@@ -129,7 +130,7 @@ std::vector<float> Generate1D_Regular_Left(pcg32_random_t& rng, int numSamples)
 	return ret;
 }
 
-std::vector<float> Generate1D_Regular_Center(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Regular_Center(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
 	std::vector<float> ret(numSamples);
 	for (int i = 0; i < numSamples; ++i)
@@ -137,7 +138,7 @@ std::vector<float> Generate1D_Regular_Center(pcg32_random_t& rng, int numSamples
 	return ret;
 }
 
-std::vector<float> Generate1D_Regular_Center_Equal(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Regular_Center_Equal(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
 	std::vector<float> ret(numSamples);
 	for (int i = 0; i < numSamples; ++i)
@@ -145,7 +146,7 @@ std::vector<float> Generate1D_Regular_Center_Equal(pcg32_random_t& rng, int numS
 	return ret;
 }
 
-std::vector<float> Generate1D_White(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_White(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
 	std::vector<float> ret(numSamples);
 	for (int i = 0; i < numSamples; ++i)
@@ -153,18 +154,39 @@ std::vector<float> Generate1D_White(pcg32_random_t& rng, int numSamples)
 	return ret;
 }
 
-std::vector<float> Generate1D_Stratified(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_GoldenRatio(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
-	std::vector<float> ret = Generate1D_Regular_Left(rng, numSamples);
+	static const float c_goldenRatioConjugate = 0.61803398875f;
+	float lastValue = 0.0f;
+	std::vector<float> ret(numSamples);
+	for (float& f : ret)
+	{
+		lastValue = std::fmodf(lastValue + c_goldenRatioConjugate, 1.0f);
+		f = lastValue;
+	}
+	return ret;
+}
+
+
+std::vector<float> Generate1D_Stratified(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
+{
+	std::vector<float> ret = Generate1D_Regular_Left(rng, numSamples, lastSamples);
 	for (float& f : ret)
 		f += RandomFloatRange(rng, 0.0f, 1.0f / float(numSamples));
 	return ret;
 }
 
-std::vector<float> Generate1D_Blue_Wrap(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Blue_Wrap(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
-	std::vector<float> ret(numSamples);
-	for (int sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
+	std::vector<float> ret;
+	int startSampleIndex = 0;
+	if (lastSamples.size() < numSamples)
+	{
+		startSampleIndex = (int)lastSamples.size();
+		ret = lastSamples;
+	}
+	ret.resize(numSamples);
+	for (int sampleIndex = startSampleIndex; sampleIndex < numSamples; ++sampleIndex)
 	{
 		float bestCandidateScore = 0.0f;
 		float bestCandidate = 0.0f;
@@ -187,10 +209,17 @@ std::vector<float> Generate1D_Blue_Wrap(pcg32_random_t& rng, int numSamples)
 	return ret;
 }
 
-std::vector<float> Generate1D_Blue_NoWrap(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Blue_NoWrap(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
-	std::vector<float> ret(numSamples);
-	for (int sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
+	std::vector<float> ret;
+	int startSampleIndex = 0;
+	if (lastSamples.size() < numSamples)
+	{
+		startSampleIndex = (int)lastSamples.size();
+		ret = lastSamples;
+	}
+	ret.resize(numSamples);
+	for (int sampleIndex = startSampleIndex; sampleIndex < numSamples; ++sampleIndex)
 	{
 		float bestCandidateScore = 0.0f;
 		float bestCandidate = 0.0f;
@@ -213,10 +242,17 @@ std::vector<float> Generate1D_Blue_NoWrap(pcg32_random_t& rng, int numSamples)
 	return ret;
 }
 
-std::vector<float> Generate1D_Blue_NoWrap_Edge(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Blue_NoWrap_Edge(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
-	std::vector<float> ret(numSamples);
-	for (int sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
+	std::vector<float> ret;
+	int startSampleIndex = 0;
+	if (lastSamples.size() < numSamples)
+	{
+		startSampleIndex = (int)lastSamples.size();
+		ret = lastSamples;
+	}
+	ret.resize(numSamples);
+	for (int sampleIndex = startSampleIndex; sampleIndex < numSamples; ++sampleIndex)
 	{
 		float bestCandidateScore = 0.0f;
 		float bestCandidate = 0.0f;
@@ -239,10 +275,17 @@ std::vector<float> Generate1D_Blue_NoWrap_Edge(pcg32_random_t& rng, int numSampl
 	return ret;
 }
 
-std::vector<float> Generate1D_Blue_NoWrap_HalfEdge(pcg32_random_t& rng, int numSamples)
+std::vector<float> Generate1D_Blue_NoWrap_HalfEdge(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples)
 {
-	std::vector<float> ret(numSamples);
-	for (int sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
+	std::vector<float> ret;
+	int startSampleIndex = 0;
+	if (lastSamples.size() < numSamples)
+	{
+		startSampleIndex = (int)lastSamples.size();
+		ret = lastSamples;
+	}
+	ret.resize(numSamples);
+	for (int sampleIndex = startSampleIndex; sampleIndex < numSamples; ++sampleIndex)
 	{
 		float bestCandidateScore = 0.0f;
 		float bestCandidate = 0.0f;
@@ -267,12 +310,15 @@ std::vector<float> Generate1D_Blue_NoWrap_HalfEdge(pcg32_random_t& rng, int numS
 
 void Do1DTests()
 {
+	printf("==================== 1D ====================\n");
+
 	pcg32_random_t rng = GetRNG();
 
 	struct Noise
 	{
 		const char* label;
-		std::vector<float> (*Generate)(pcg32_random_t& rng, int numSamples) = nullptr;
+		std::vector<float>(*Generate)(pcg32_random_t& rng, int numSamples, std::vector<float>& lastSamples) = nullptr;
+		std::vector<float> error;
 		std::vector<float> avgErrorAtSamples;
 		std::vector<float> avgErrorSqAtSamples;
 	};
@@ -283,6 +329,7 @@ void Do1DTests()
 		{ "Regular - Left", Generate1D_Regular_Left },
 		{ "Regular - Center", Generate1D_Regular_Center },
 		{ "Regular - Center Equal", Generate1D_Regular_Center_Equal },
+		{ "Golden Ratio", Generate1D_GoldenRatio },
 		{ "Stratified", Generate1D_Stratified },
 		{ "White", Generate1D_White },
 		{ "Blue - Wrap", Generate1D_Blue_Wrap },
@@ -291,90 +338,122 @@ void Do1DTests()
 		{ "Blue - No Wrap Half Edge", Generate1D_Blue_NoWrap_HalfEdge},
 	};
 
+	// allocate space for the results of our test.
+	// store them all out so we can work multithreadedly, then deterministically combine the results together.
 	for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
 	{
 		Noise& noise = noiseTypes[noiseIndex];
+		noise.error.resize(c_1DTestCount * c_1DTestPointCount);
 		noise.avgErrorAtSamples.resize(c_1DTestPointCount);
 		noise.avgErrorSqAtSamples.resize(c_1DTestPointCount);
 	}
 
-	// for each test
-	int lastPercent = -1;
-	for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+	// smooth tests
 	{
-		int percent = int(100.0f * float(testIndex) / float(c_1DTestCount));
-		if (lastPercent != percent)
+		printf("Smooth Functions...\n");
+
+		// for each test
+		std::atomic<int> testsDone = 0;
+		int lastPercent = -1;
+		#pragma omp parallel for
+		for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
 		{
-			lastPercent = percent;
-			printf("\r%i%%", percent);
-		}
-
-		// Generate a random 1d Bezier curve
-		float A = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-		float B = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-		float C = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-		float D = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-
-		// Calculate the definite integral of the bezier curve, between 0 and 1
-		const float c_actualValue = Integral1DCubicBezier(A, B, C, D);
-
-		// for each type of noise
-		for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
-		{
-			Noise& noise = noiseTypes[noiseIndex];
-
-			// for each sample count in the test
-			for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+			int threadId = omp_get_thread_num();
+			if (threadId == 0)
 			{
-				// generate the samples
-				std::vector<float> samples = noise.Generate(rng, pointIndex + 1);
-
-				// integrate!
-				float yAvg = 0.0f;
-				for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
+				int percent = int(100.0f * float(testsDone.load()) / float(c_1DTestCount));
+				if (lastPercent != percent)
 				{
-					float y = Evaluate1DCubicBezier(A, B, C, D, samples[sampleIndex]);
-					yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
+					lastPercent = percent;
+					printf("\r%i%%", percent);
 				}
-
-				// track average error and error squared for this sample count, so we can calculate RMSE
-				float error = std::abs(yAvg - c_actualValue);
-				noise.avgErrorAtSamples[pointIndex] = Lerp(noise.avgErrorAtSamples[pointIndex], error, 1.0f / float(testIndex + 1));
-				noise.avgErrorSqAtSamples[pointIndex] = Lerp(noise.avgErrorSqAtSamples[pointIndex], error * error, 1.0f / float(testIndex + 1));
-			}
-		}
-	}
-	printf("\r100%%\n");
-
-	// Write out the 1d results CSV
-	{
-		FILE* file = nullptr;
-		fopen_s(&file, "out/1d.csv", "wb");
-
-		// for each sample count
-		for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
-		{
-			// write the csv header
-			if (pointIndex == 0)
-			{
-				fprintf(file, "\"samples\"");
-				for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
-					fprintf(file, ",\"%s\"", noiseTypes[noiseIndex].label);
-				fprintf(file, "\n");
 			}
 
-			// write the rmse
-			fprintf(file, "\"%i\"", pointIndex + 1);
+			// Generate a random 1d Bezier curve
+			float A = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+			float B = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+			float C = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+			float D = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+
+			// Calculate the definite integral of the bezier curve, between 0 and 1
+			const float c_actualValue = Integral1DCubicBezier(A, B, C, D);
+
+			// for each type of noise
 			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
 			{
 				Noise& noise = noiseTypes[noiseIndex];
-				float rmse = std::sqrt(noise.avgErrorSqAtSamples[pointIndex] - noise.avgErrorAtSamples[pointIndex] * noise.avgErrorAtSamples[pointIndex]);
-				fprintf(file, ",\"%f\"", rmse);
+
+				// for each sample count in the test
+				std::vector<float> samples;
+				for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+				{
+					// generate the samples
+					samples = noise.Generate(rng, pointIndex + 1, samples);
+
+					// integrate!
+					float yAvg = 0.0f;
+					for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
+					{
+						float y = Evaluate1DCubicBezier(A, B, C, D, samples[sampleIndex]);
+						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
+					}
+
+					// store the error
+					noise.error[testIndex * c_1DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
+				}
 			}
-			fprintf(file, "\n");
+			testsDone.fetch_add(1);
+		}
+		printf("\r100%%\n");
+
+		// Gather the results
+		{
+			#pragma omp parallel for
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+			{
+				Noise& noise = noiseTypes[noiseIndex];
+				for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+				{
+					for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+					{
+						float error = noise.error[testIndex * c_1DTestPointCount + pointIndex];
+						noise.avgErrorAtSamples[pointIndex] = Lerp(noise.avgErrorAtSamples[pointIndex], error, 1.0f / float(testIndex + 1));
+						noise.avgErrorSqAtSamples[pointIndex] = Lerp(noise.avgErrorSqAtSamples[pointIndex], error * error, 1.0f / float(testIndex + 1));
+					}
+				}
+			}
 		}
 
-		fclose(file);
+		// Write out the 1d results CSV
+		{
+			FILE* file = nullptr;
+			fopen_s(&file, "out/1DResultsSmooth.csv", "wb");
+
+			// for each sample count
+			for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+			{
+				// write the csv header
+				if (pointIndex == 0)
+				{
+					fprintf(file, "\"samples\"");
+					for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+						fprintf(file, ",\"%s\"", noiseTypes[noiseIndex].label);
+					fprintf(file, "\n");
+				}
+
+				// write the rmse
+				fprintf(file, "\"%i\"", pointIndex + 1);
+				for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+				{
+					Noise& noise = noiseTypes[noiseIndex];
+					float rmse = std::sqrt(noise.avgErrorSqAtSamples[pointIndex] - noise.avgErrorAtSamples[pointIndex] * noise.avgErrorAtSamples[pointIndex]);
+					fprintf(file, ",\"%f\"", rmse);
+				}
+				fprintf(file, "\n");
+			}
+
+			fclose(file);
+		}
 	}
 
 	// write out example sample points
@@ -382,11 +461,14 @@ void Do1DTests()
 		// generate the noise types
 		std::vector<std::vector<float>> noiseSamplePoints(_countof(noiseTypes));
 		for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
-			noiseSamplePoints[noiseIndex] = noiseTypes[noiseIndex].Generate(rng, c_1DNumPointsReported);
+		{
+			std::vector<float> samples;
+			noiseSamplePoints[noiseIndex] = noiseTypes[noiseIndex].Generate(rng, c_1DNumPointsReported, samples);
+		}
 
 		// create the file
 		FILE* file = nullptr;
-		fopen_s(&file, "out/1dpoints.csv", "wb");
+		fopen_s(&file, "out/1DPoints.csv", "wb");
 
 		// write the header
 		fprintf(file, "\"samples\"");
@@ -419,27 +501,9 @@ int main(int argc, char** argv)
 /*
 TODO:
 
-! use omp and boost the test or sample count up!
 ! do a random non smooth function. random piecewise linear with 4 pieces or something?
-
------ 1D sampling -----
-
-* Sample Types:
- * 0.0, 1.0 style
- * 0.0, 0.5 style
- * 0.5, 1.0 style
- * 0.25, 0.75 style
- * 0.3, 0.6 style
- * white noise?
- * stratified?
- * golden ratio?
- * MBC? (EBC?) with and without wrap around distance
-
-* Integrate random Bezier functions
-* show RMSE at each sample
-
-* make CSV
-* draw some low point count numberline for each type of noise, to show it on the blog post.
+* make numberlines from the 1d point csv
+* make different graphs for different purposes? like the regular ones together, and the random based ones together? can't comapre them tho. maybe compare best? dunno
 
 ----- 2D sampling -----
 
