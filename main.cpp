@@ -20,7 +20,7 @@ static const int	c_1DTestCount = 1000;
 static const int	c_1DTestPointCount = 200;
 static const float	c_1DTestControlPointMin = -10.0f;
 static const float	c_1DTestControlPointMax = 10.0f;
-static const int	c_1DNumPointsReported = 5;
+static const int	c_1DNumPointsReported = 20;
 
 typedef std::array<float, 1> float1;
 typedef std::array<float, 2> float2;
@@ -316,7 +316,7 @@ std::vector<float> Generate1D_Blue_NoWrap_HalfEdge(pcg32_random_t& rng, int numS
 		for (int candidateIndex = 0; candidateIndex < candidateCount; ++candidateIndex)
 		{
 			float candidate = RandomFloat01(rng);
-			float candidateScore = std::min(candidate, 1.0f - candidate) / 2.0f; // initialize the score to be half the distance to the edge
+			float candidateScore = std::min(candidate, 1.0f - candidate) * 2.0f; // initialize the score to be twice the distance to the edge (make distance to edge count half as much)
 			for (int pointIndex = 0; pointIndex < sampleIndex; ++pointIndex)
 				candidateScore = std::min(candidateScore, Distance(float1{ candidate }, float1{ ret[pointIndex] }));
 
@@ -639,7 +639,6 @@ int main(int argc, char** argv)
 TODO:
 
 * make numberlines from the 1d point csv
-* make different graphs for different purposes? like the regular ones together, and the random based ones together? can't comapre them tho. maybe compare best? dunno
 
 ----- 2D sampling -----
 
