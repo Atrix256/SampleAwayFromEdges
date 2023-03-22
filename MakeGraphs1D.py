@@ -10,11 +10,12 @@ graphs = [
         "dest": "out/1DSmoothRegular",
         "cols":[
             "White",
+            "Stratified",
+            "Golden Ratio",
             "Regular - Ends",
             "Regular - Left",
             "Regular - Center",
             "Regular - Center Equal",
-            "Golden Ratio"
             ]
     },
     {
@@ -22,12 +23,13 @@ graphs = [
         "source": "out/1DResultsNonSmooth.csv",
         "dest": "out/1DNonSmoothRegular",
         "cols":[
-            "White", 
+            "White",
+            "Stratified",
+            "Golden Ratio",
             "Regular - Ends",
             "Regular - Left",
             "Regular - Center",
             "Regular - Center Equal",
-            "Golden Ratio"
             ]
     },
     {
@@ -36,11 +38,12 @@ graphs = [
         "dest": "out/1DSmoothBlue",
         "cols":[
             "White",
+            "Stratified",
+            "Golden Ratio",
             "Blue - Wrap",
             "Blue - No Wrap",
             "Blue - No Wrap Edge",
             "Blue - No Wrap Half Edge",
-            "Golden Ratio"
             ]
     },        
     {
@@ -49,11 +52,12 @@ graphs = [
         "dest": "out/1DNonSmoothBlue",
         "cols":[
             "White",
+            "Stratified",
+            "Golden Ratio",
             "Blue - Wrap",
             "Blue - No Wrap",
             "Blue - No Wrap Edge",
             "Blue - No Wrap Half Edge",
-            "Golden Ratio"
             ]
     },    
 ]
@@ -116,6 +120,7 @@ cols = [
     "Blue - No Wrap",
     "Blue - No Wrap Edge",
     "Blue - No Wrap Half Edge",
+    "Stratified",
     "White",
 ]
 

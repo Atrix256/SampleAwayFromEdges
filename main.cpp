@@ -638,8 +638,6 @@ int main(int argc, char** argv)
 /*
 TODO:
 
-* make numberlines from the 1d point csv
-
 ----- 2D sampling -----
 
 * Sample Types:
