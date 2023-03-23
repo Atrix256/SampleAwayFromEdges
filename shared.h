@@ -84,3 +84,81 @@ std::vector<std::array<float, N>> Generate_White(pcg32_random_t& rng, int numSam
 	}
 	return ret;
 }
+
+template <typename LAMBDA>
+void DoTests(const char* label, int testCount, const LAMBDA& lambda)
+{
+
+	// for each test
+	std::atomic<int> testsDone = 0;
+	int lastPercent = -1;
+	#pragma omp parallel for
+	for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+	{
+		int threadId = omp_get_thread_num();
+		if (threadId == 0)
+		{
+			int percent = int(100.0f * float(testsDone.load()) / float(c_1DTestCount));
+			if (lastPercent != percent)
+			{
+				lastPercent = percent;
+				printf("\r%s: %i%%", label, percent);
+			}
+		}
+
+		pcg32_random_t rng = GetRNG(testIndex);
+
+		lambda(testIndex, rng);
+
+		testsDone.fetch_add(1);
+	}
+
+	printf("\r%s: 100%%\n", label);
+}
+
+template <typename T, size_t N>
+void WriteNoiseResults(T(&noiseTypes)[N], const char* fileName)
+{
+	#pragma omp parallel for
+	for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+	{
+		T& noise = noiseTypes[noiseIndex];
+		for (int testIndex = 0; testIndex < c_1DTestCount; ++testIndex)
+		{
+			for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+			{
+				float error = noise.error[testIndex * c_1DTestPointCount + pointIndex];
+				noise.avgErrorAtSamples[pointIndex] = Lerp(noise.avgErrorAtSamples[pointIndex], error, 1.0f / float(testIndex + 1));
+				noise.avgErrorSqAtSamples[pointIndex] = Lerp(noise.avgErrorSqAtSamples[pointIndex], error * error, 1.0f / float(testIndex + 1));
+			}
+		}
+	}
+
+	FILE* file = nullptr;
+	fopen_s(&file, fileName, "wb");
+
+	// for each sample count
+	for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+	{
+		// write the csv header
+		if (pointIndex == 0)
+		{
+			fprintf(file, "\"samples\"");
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+				fprintf(file, ",\"%s\"", noiseTypes[noiseIndex].label);
+			fprintf(file, "\n");
+		}
+
+		// write the rmse
+		fprintf(file, "\"%i\"", pointIndex + 1);
+		for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+		{
+			Noise<1>& noise = noiseTypes[noiseIndex];
+			float rmse = std::sqrt(noise.avgErrorSqAtSamples[pointIndex] - noise.avgErrorAtSamples[pointIndex] * noise.avgErrorAtSamples[pointIndex]);
+			fprintf(file, ",\"%f\"", rmse);
+		}
+		fprintf(file, "\n");
+	}
+
+	fclose(file);
+}
