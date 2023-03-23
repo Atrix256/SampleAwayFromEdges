@@ -78,7 +78,9 @@
     <ClCompile Include="pcg\pcg_basic.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="1D.h" />
     <ClInclude Include="pcg\pcg_basic.h" />
+    <ClInclude Include="shared.h" />
     <ClInclude Include="stb\stb_image_write.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

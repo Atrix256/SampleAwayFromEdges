@@ -13,6 +13,8 @@
     <ClInclude Include="stb\stb_image_write.h">
       <Filter>stb</Filter>
     </ClInclude>
+    <ClInclude Include="1D.h" />
+    <ClInclude Include="shared.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb">
