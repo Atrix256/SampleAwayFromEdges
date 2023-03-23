@@ -91,14 +91,6 @@ std::vector<float1> Generate1D_Regular_Center_Equal(pcg32_random_t& rng, int num
 	return ret;
 }
 
-std::vector<float1> Generate1D_White(pcg32_random_t& rng, int numSamples, std::vector<float1>& lastSamples)
-{
-	std::vector<float1> ret(numSamples);
-	for (int i = 0; i < numSamples; ++i)
-		ret[i][0] = RandomFloat01(rng);
-	return ret;
-}
-
 std::vector<float1> Generate1D_GoldenRatio(pcg32_random_t& rng, int numSamples, std::vector<float1>& lastSamples)
 {
 	static const float c_goldenRatioConjugate = 0.61803398875f;
@@ -257,8 +249,6 @@ void Do1DTests()
 {
 	printf("==================== 1D ====================\n");
 
-	pcg32_random_t rng = GetRNG();
-
 	Noise<1> noiseTypes[] =
 	{
 		{ "Regular - Ends", Generate1D_Regular_Ends },
@@ -267,7 +257,7 @@ void Do1DTests()
 		{ "Regular - Center Equal", Generate1D_Regular_Center_Equal },
 		{ "Golden Ratio", Generate1D_GoldenRatio },
 		{ "Stratified", Generate1D_Stratified },
-		{ "White", Generate1D_White },
+		{ "White", Generate_White<1> },
 		{ "Blue - Wrap", Generate1D_Blue_Wrap },
 		{ "Blue - No Wrap", Generate1D_Blue_NoWrap },
 		{ "Blue - No Wrap Edge", Generate1D_Blue_NoWrap_Edge },
@@ -304,6 +294,8 @@ void Do1DTests()
 					printf("\r%i%%", percent);
 				}
 			}
+
+			pcg32_random_t rng = GetRNG(testIndex);
 
 			// Generate a random 1d Bezier curve
 			float A = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
@@ -413,6 +405,8 @@ void Do1DTests()
 				}
 			}
 
+			pcg32_random_t rng = GetRNG(testIndex);
+
 			// Generate a random 1d Bezier curve
 			float points[8] = {
 				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
@@ -508,6 +502,8 @@ void Do1DTests()
 
 	// write out example sample points
 	{
+		pcg32_random_t rng = GetRNG(0);
+
 		// generate the noise types
 		std::vector<std::vector<float1>> noiseSamplePoints(_countof(noiseTypes));
 		for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)

@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="1D.h" />
+    <ClInclude Include="2DSquare.h" />
     <ClInclude Include="pcg\pcg_basic.h" />
     <ClInclude Include="shared.h" />
     <ClInclude Include="stb\stb_image_write.h" />

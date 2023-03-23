@@ -18,12 +18,12 @@ struct Noise
 	std::vector<float> avgErrorSqAtSamples;
 };
 
-inline pcg32_random_t GetRNG()
+inline pcg32_random_t GetRNG(int streamIndex)
 {
 	pcg32_random_t rng;
 
 #if DETERMINISTIC()
-	pcg32_srandom_r(&rng, 0x1337b337, 0xbeefcafe);
+	pcg32_srandom_r(&rng, 0x1337b337, streamIndex);
 #else
 	std::random_device rd;
 	pcg32_srandom_r(&rng, rd(), rd());
@@ -71,4 +71,16 @@ float Distance(const std::array<float, N>& A, const std::array<float, N>& B)
 		sumDSquared += d * d;
 	}
 	return std::sqrt(sumDSquared);
+}
+
+template <size_t N>
+std::vector<std::array<float, N>> Generate_White(pcg32_random_t& rng, int numSamples, std::vector<std::array<float, N>>& lastSamples)
+{
+	std::vector<std::array<float, N>> ret(numSamples);
+	for (int i = 0; i < numSamples; ++i)
+	{
+		for (int j = 0; j < N; ++j)
+			ret[i][j] = RandomFloat01(rng);
+	}
+	return ret;
 }

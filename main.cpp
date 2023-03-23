@@ -23,6 +23,7 @@ static const float	c_1DTestControlPointMax = 10.0f;
 static const int	c_1DNumPointsReported = 20;
 
 #include "1D.h"
+#include "2DSquare.h"
 
 int main(int argc, char** argv)
 {
@@ -30,7 +31,7 @@ int main(int argc, char** argv)
 
 	Do1DTests();
 
-	//Do2DSquareTest();
+	Do2DSquareTests();
 
 	return 0;
 }
