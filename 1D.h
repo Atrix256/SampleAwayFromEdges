@@ -264,117 +264,101 @@ void Do1DTests()
 		{ "Blue - No Wrap Half Edge", Generate1D_Blue_NoWrap_HalfEdge},
 	};
 
-	// allocate space for the results of our test.
-	// store them all out so we can work multithreadedly, then deterministically combine the results together.
-	for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
-	{
-		Noise<1>& noise = noiseTypes[noiseIndex];
-		noise.error.resize(c_1DTestCount * c_1DTestPointCount);
-		noise.avgErrorAtSamples.resize(c_1DTestPointCount);
-		noise.avgErrorSqAtSamples.resize(c_1DTestPointCount);
-	}
-
 	// smooth tests
-	{
-		// Do the tests
-		DoTests(
-			"Smooth",
-			c_1DTestCount,
-			[&] (int testIndex, pcg32_random_t& rng)
+	DoTests(
+		"Smooth",
+		noiseTypes,
+		c_1DTestCount,
+		c_1DTestPointCount,
+		"out/1DResultsSmooth.csv",
+		[&] (int testIndex, pcg32_random_t& rng)
+		{
+			// Generate a random 1d Bezier curve
+			float A = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+			float B = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+			float C = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+			float D = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+
+			// Calculate the definite integral of the bezier curve, between 0 and 1
+			const float c_actualValue = Integral1DCubicBezier(A, B, C, D);
+
+			// for each type of noise
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
 			{
-				// Generate a random 1d Bezier curve
-				float A = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-				float B = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-				float C = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
-				float D = RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax);
+				Noise<1>& noise = noiseTypes[noiseIndex];
 
-				// Calculate the definite integral of the bezier curve, between 0 and 1
-				const float c_actualValue = Integral1DCubicBezier(A, B, C, D);
-
-				// for each type of noise
-				for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+				// for each sample count in the test
+				std::vector<float1> samples;
+				for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
 				{
-					Noise<1>& noise = noiseTypes[noiseIndex];
+					// generate the samples
+					samples = noise.Generate(rng, pointIndex + 1, samples);
 
-					// for each sample count in the test
-					std::vector<float1> samples;
-					for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+					// integrate!
+					float yAvg = 0.0f;
+					for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
 					{
-						// generate the samples
-						samples = noise.Generate(rng, pointIndex + 1, samples);
-
-						// integrate!
-						float yAvg = 0.0f;
-						for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
-						{
-							float y = Evaluate1DCubicBezier(A, B, C, D, samples[sampleIndex][0]);
-							yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
-						}
-
-						// store the error
-						noise.error[testIndex * c_1DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
+						float y = Evaluate1DCubicBezier(A, B, C, D, samples[sampleIndex][0]);
+						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
 					}
+
+					// store the error
+					noise.error[testIndex * c_1DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
 				}
 			}
-		);
-
-		// Write the results
-		WriteNoiseResults(noiseTypes, "out/1DResultsSmooth.csv");
-	}
+		}
+	);
 
 	// non smooth tests
-	{
-		// Do the tests
-		DoTests(
-			"Non Smooth",
-			c_1DTestCount,
-			[&](int testIndex, pcg32_random_t& rng)
+	DoTests(
+		"Non Smooth",
+		noiseTypes,
+		c_1DTestCount,
+		c_1DTestPointCount,
+		"out/1DResultsNonSmooth.csv",
+		[&](int testIndex, pcg32_random_t& rng)
+		{
+			// Generate a random 1d Bezier curve
+			float points[8] = {
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
+				RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax)
+			};
+
+			// Calculate the definite integral of the bezier curve, between 0 and 1
+			const float c_actualValue = IntegralLinearPiecewise(points);
+
+			// for each type of noise
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
 			{
-				// Generate a random 1d Bezier curve
-				float points[8] = {
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax),
-					RandomFloatRange(rng, c_1DTestControlPointMin, c_1DTestControlPointMax)
-				};
+				Noise<1>& noise = noiseTypes[noiseIndex];
 
-				// Calculate the definite integral of the bezier curve, between 0 and 1
-				const float c_actualValue = IntegralLinearPiecewise(points);
-
-				// for each type of noise
-				for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+				// for each sample count in the test
+				std::vector<float1> samples;
+				for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
 				{
-					Noise<1>& noise = noiseTypes[noiseIndex];
+					// generate the samples
+					samples = noise.Generate(rng, pointIndex + 1, samples);
 
-					// for each sample count in the test
-					std::vector<float1> samples;
-					for (int pointIndex = 0; pointIndex < c_1DTestPointCount; ++pointIndex)
+					// integrate!
+					float yAvg = 0.0f;
+					for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
 					{
-						// generate the samples
-						samples = noise.Generate(rng, pointIndex + 1, samples);
-
-						// integrate!
-						float yAvg = 0.0f;
-						for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
-						{
-							float y = EvaluateLinearPiecewise(points, samples[sampleIndex][0]);
-							yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
-						}
-
-						// store the error
-						noise.error[testIndex * c_1DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
+						float y = EvaluateLinearPiecewise(points, samples[sampleIndex][0]);
+						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
 					}
+
+					// store the error
+					noise.error[testIndex * c_1DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
 				}
 			}
-		);
-
-		// Write the results
-		WriteNoiseResults(noiseTypes, "out/1DResultsNonSmooth.csv");
-	}
+		}
+	);
 
 	// write out example sample points
 	{

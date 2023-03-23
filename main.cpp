@@ -22,6 +22,9 @@ static const float	c_1DTestControlPointMin = -10.0f;
 static const float	c_1DTestControlPointMax = 10.0f;
 static const int	c_1DNumPointsReported = 20;
 
+static const int	c_2DTestCount = 1000;
+static const int	c_2DTestPointCount = 200;
+
 #include "1D.h"
 #include "2DSquare.h"
 
