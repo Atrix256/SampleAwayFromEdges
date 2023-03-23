@@ -92,7 +92,7 @@ void DoTests(const char* label, T(&noiseTypes)[N], int testCount, int pointCount
 	// store them all out so we can work multithreadedly, then deterministically combine the results together.
 	for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
 	{
-		Noise<1>& noise = noiseTypes[noiseIndex];
+		T& noise = noiseTypes[noiseIndex];
 		noise.error.resize(testCount * pointCount);
 		noise.avgErrorAtSamples.resize(pointCount);
 		noise.avgErrorSqAtSamples.resize(pointCount);
@@ -101,7 +101,7 @@ void DoTests(const char* label, T(&noiseTypes)[N], int testCount, int pointCount
 	// for each test
 	std::atomic<int> testsDone = 0;
 	int lastPercent = -1;
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int testIndex = 0; testIndex < testCount; ++testIndex)
 	{
 		int threadId = omp_get_thread_num();
@@ -159,7 +159,7 @@ void DoTests(const char* label, T(&noiseTypes)[N], int testCount, int pointCount
 			fprintf(file, "\"%i\"", pointIndex + 1);
 			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
 			{
-				Noise<1>& noise = noiseTypes[noiseIndex];
+				T& noise = noiseTypes[noiseIndex];
 				float rmse = std::sqrt(noise.avgErrorSqAtSamples[pointIndex] - noise.avgErrorAtSamples[pointIndex] * noise.avgErrorAtSamples[pointIndex]);
 				fprintf(file, ",\"%f\"", rmse);
 			}
