@@ -88,8 +88,6 @@ std::vector<float2> GenerateCircle_Stratified(pcg32_random_t& rng, int numSample
 		p[1] = 0.5f + std::sin(theta) * 0.5f * radius;
 	}
 
-	// TODO: take the above sqrt out and verify it is working correctly as is.
-
 	return ret;
 }
 
@@ -126,15 +124,30 @@ void Do2DCircleTests()
 			for (int i = 0; i < 16; ++i)
 				controlPoints[i] = RandomFloatRange(rng, c_2DTestControlPointMin, c_2DTestControlPointMax);
 
-			// Calculate the definite integral of the bezier surface, in [0,1]^2
-			const float c_actualValueControlPoints[4] =
+			// Calculate actual value through monte carlo integration
+			float actualValue = 0.0f;
+			for (int i = 0; i < c_2DCircleActualValueSamples; ++i)
 			{
-				Integral1DCubicBezier(controlPoints[0], controlPoints[1], controlPoints[2], controlPoints[3]),
-				Integral1DCubicBezier(controlPoints[4], controlPoints[5], controlPoints[6], controlPoints[7]),
-				Integral1DCubicBezier(controlPoints[8], controlPoints[9], controlPoints[10], controlPoints[11]),
-				Integral1DCubicBezier(controlPoints[12], controlPoints[13], controlPoints[14], controlPoints[15])
-			};
-			const float c_actualValue = Integral1DCubicBezier(c_actualValueControlPoints[0], c_actualValueControlPoints[1], c_actualValueControlPoints[2], c_actualValueControlPoints[3]);
+				float theta = 2.0f * c_pi * RandomFloat01(rng);
+				float radius = std::sqrt(RandomFloat01(rng));
+
+				float2 p = float2{
+					0.5f + std::cos(theta) * 0.5f * radius,
+					0.5f + std::sin(theta) * 0.5f * radius
+				};
+
+				float controlPointsY[4] =
+				{
+					Evaluate1DCubicBezier(controlPoints[0], controlPoints[1], controlPoints[2], controlPoints[3], p[0]),
+					Evaluate1DCubicBezier(controlPoints[4], controlPoints[5], controlPoints[6], controlPoints[7], p[0]),
+					Evaluate1DCubicBezier(controlPoints[8], controlPoints[9], controlPoints[10], controlPoints[11], p[0]),
+					Evaluate1DCubicBezier(controlPoints[12], controlPoints[13], controlPoints[14], controlPoints[15], p[0])
+				};
+
+				float y = Evaluate1DCubicBezier(controlPointsY[0], controlPointsY[1], controlPointsY[2], controlPointsY[3], p[1]);
+
+				actualValue = Lerp(actualValue, y, 1.0f / float(i + 1));
+			}
 
 			// for each type of noise
 			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
@@ -165,7 +178,7 @@ void Do2DCircleTests()
 					}
 
 					// store the error
-					noise.error[testIndex * c_2DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
+					noise.error[testIndex * c_2DTestPointCount + pointIndex] = std::abs(yAvg - actualValue);
 				}
 			}
 		}
@@ -185,20 +198,30 @@ void Do2DCircleTests()
 			for (int i = 0; i < 16; ++i)
 				controlPoints[i] = RandomFloatRange(rng, c_2DTestControlPointMin, c_2DTestControlPointMax);
 
-			// The integral of a bilinear patch is the average of it's 4 control points multiplied by it's size.
-			// Integrating muiltiple piecewise bilinear patches is just averaging their values and multiplying by total size.
-			// Our square of integration is [0,1]^2 so has area of 1.
-			// So, the integral of this 2x2 grid of randomly generated bilinear patches is just the average of
-			// all of the control points.
+			// Calculate actual value through monte carlo integration
+			float actualValue = 0.0f;
+			for (int i = 0; i < c_2DCircleActualValueSamples; ++i)
+			{
+				float theta = 2.0f * c_pi * RandomFloat01(rng);
+				float radius = std::sqrt(RandomFloat01(rng));
 
-			// Calculate the definite integral of the bezier surface, in [0,1]^2
-			const float c_actualValue =
-			(
-				controlPoints[0] + controlPoints[1] + controlPoints[2] + controlPoints[3] +
-				controlPoints[4] + controlPoints[5] + controlPoints[6] + controlPoints[7] +
-				controlPoints[8] + controlPoints[9] + controlPoints[10] + controlPoints[11] +
-				controlPoints[12] + controlPoints[13] + controlPoints[14] + controlPoints[15]
-			) / 16.0f;
+				float2 p = float2{
+					0.5f + std::cos(theta) * 0.5f * radius,
+					0.5f + std::sin(theta) * 0.5f * radius
+				};
+
+				float controlPointsY[4] =
+				{
+					Evaluate1DCubicBezier(controlPoints[0], controlPoints[1], controlPoints[2], controlPoints[3], p[0]),
+					Evaluate1DCubicBezier(controlPoints[4], controlPoints[5], controlPoints[6], controlPoints[7], p[0]),
+					Evaluate1DCubicBezier(controlPoints[8], controlPoints[9], controlPoints[10], controlPoints[11], p[0]),
+					Evaluate1DCubicBezier(controlPoints[12], controlPoints[13], controlPoints[14], controlPoints[15], p[0])
+				};
+
+				float y = Evaluate1DCubicBezier(controlPointsY[0], controlPointsY[1], controlPointsY[2], controlPointsY[3], p[1]);
+
+				actualValue = Lerp(actualValue, y, 1.0f / float(i + 1));
+			}
 
 			// for each type of noise
 			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
@@ -236,7 +259,7 @@ void Do2DCircleTests()
 					}
 
 					// store the error
-					noise.error[testIndex * c_2DTestPointCount + pointIndex] = std::abs(yAvg - c_actualValue);
+					noise.error[testIndex * c_2DTestPointCount + pointIndex] = std::abs(yAvg - actualValue);
 				}
 			}
 		}
