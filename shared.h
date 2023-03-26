@@ -6,6 +6,8 @@
 typedef std::array<float, 1> float1;
 typedef std::array<float, 2> float2;
 
+static const float c_pi = 3.14159265359f;
+
 template <size_t N>
 struct Noise
 {

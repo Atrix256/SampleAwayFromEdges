@@ -16,6 +16,7 @@
     <ClInclude Include="1D.h" />
     <ClInclude Include="shared.h" />
     <ClInclude Include="2DSquare.h" />
+    <ClInclude Include="2DCircle.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb">
