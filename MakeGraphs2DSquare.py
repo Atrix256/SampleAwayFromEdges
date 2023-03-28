@@ -14,6 +14,8 @@ graphs = [
             "Stratified",
             "Regular Grid",
             "Hex Grid",
+            "R2",
+            "Fibonacci",
             ]
     },
     {
@@ -25,6 +27,8 @@ graphs = [
             "Stratified",
             "Regular Grid",
             "Hex Grid",
+            "R2",
+            "Fibonacci",
             ]
     },
     {
@@ -36,6 +40,8 @@ graphs = [
             "Stratified",
             "Blue - Wrap",
             "Blue - No Wrap",
+            "Blue - No Wrap Edge",
+            "Blue - No Wrap Half Edge",
             ]
     },        
     {
@@ -77,6 +83,13 @@ for graph in graphs:
     fig.savefig(graph["dest"] + ".pdf", bbox_inches='tight')
 
 def SetupPointPlot(ax, title):
+
+    if len(title) == 0:
+        ax.spines['right'].set_color('none')
+        ax.spines['left'].set_color('none')
+        ax.spines['top'].set_color('none')
+        ax.spines['bottom'].set_color('none')
+
     #ax.spines['right'].set_color('none')
     #ax.spines['left'].set_color('none')
     #ax.yaxis.set_major_locator(ticker.NullLocator())
@@ -109,20 +122,22 @@ cols = [
     "Stratified",
     "Regular Grid",
     "Hex Grid",
+    "R2",
+    "Fibonacci",
     "Blue - Wrap",
     "Blue - No Wrap",
     "Blue - No Wrap Edge",
     "Blue - No Wrap Half Edge",
 ]
 
-numCols = 2
-numRows = int(math.ceil(len(cols) / 2))
+numCols = 3
+numRows = int(math.ceil(len(cols) / numCols))
 
 df = pd.read_csv("out/2DPoints.csv")
 
 fig, ax = plt.subplots(numRows, numCols, figsize=(4 * numCols, 4 * numRows))
 
-fig.suptitle("Points")
+#fig.suptitle("Points")
 
 for colIndex in range(len(cols)):
     axisX = colIndex % numCols
@@ -131,6 +146,10 @@ for colIndex in range(len(cols)):
     for x,y in zip(df[cols[colIndex] + " X"], df[cols[colIndex] + " Y"]):
         ax[axisY][axisX].plot(x, y, 'ro', ms = 3, mfc = 'r', clip_on=False, zorder=100)
 
+if (len(cols)) % numCols > 0:
+    for axisX in range((len(cols)) % numCols, numCols):
+        SetupPointPlot(ax[numRows-1][axisX], "")
+
 fig.tight_layout()
-fig.savefig("out/2DPoints.png", bbox_inches='tight')
-fig.savefig("out/2DPoints.pdf", bbox_inches='tight')
+fig.savefig("out/2DSquarePoints.png", bbox_inches='tight')
+fig.savefig("out/2DSquarePoints.pdf", bbox_inches='tight')

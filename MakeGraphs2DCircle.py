@@ -12,13 +12,16 @@ graphs = [
         "cols":[
             "White",
             "Regular Grid",
+            "Regular Grid Circle",
             "Stratified",
+            "Stratified Circle",
             "Hex Grid",
+            "Hex Grid Circle",
+            "R2",
+            "R2 Circle",
+            "Fibonacci",
             ]
     },
-]
-
-'''
     {
         "title": "Regular Non Smooth",
         "source": "out/2DCircleResultsNonSmooth.csv",
@@ -26,8 +29,14 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
+            "Stratified Circle",
             "Regular Grid",
+            "Regular Grid Circle",
             "Hex Grid",
+            "Hex Grid Circle",
+            "R2",
+            "R2 Circle",
+            "Fibonacci",
             ]
     },
     {
@@ -37,8 +46,9 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
-            "Blue - Wrap",
             "Blue - No Wrap",
+            "Blue - No Wrap Edge",
+            "Blue - No Wrap Half Edge",
             ]
     },        
     {
@@ -48,14 +58,12 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
-            "Blue - Wrap",
             "Blue - No Wrap",
             "Blue - No Wrap Edge",
             "Blue - No Wrap Half Edge",
             ]
     },
 ]
-'''
 
 for graph in graphs:
     print(graph["title"])
@@ -101,8 +109,9 @@ def SetupPointPlot(ax, title):
     ax.yaxis.set_major_locator(ticker.NullLocator())
     ax.yaxis.set_minor_locator(ticker.NullLocator())
 
-    circle = plt.Circle((0.5, 0.5), 0.5, color='b', fill=False, clip_on=False)
-    ax.add_patch(circle)
+    if len(title) > 0:
+        circle = plt.Circle((0.5, 0.5), 0.5, color='b', fill=False, clip_on=False)
+        ax.add_patch(circle)
 
     ax.set_title(title)
     #ax.text(0.0, 0.2, title, transform=ax.transAxes)    
@@ -115,27 +124,27 @@ def SetupPointPlot(ax, title):
 cols = [
     "White",
     "Regular Grid",
+    "Regular Grid Circle",
     "Stratified",
+    "Stratified Circle",
     "Hex Grid",
-]
-
-'''    
-    
-    "Blue - Wrap",
+    "Hex Grid Circle",
+    "R2",
+    "R2 Circle",
+    "Fibonacci",
     "Blue - No Wrap",
     "Blue - No Wrap Edge",
     "Blue - No Wrap Half Edge",
-    '''
+]
 
-
-numCols = 2
-numRows = int(math.ceil(len(cols) / 2))
+numCols = 4
+numRows = int(math.ceil(len(cols) / numCols))
 
 df = pd.read_csv("out/2DCirclePoints.csv")
 
 fig, ax = plt.subplots(numRows, numCols, figsize=(4 * numCols, 4 * numRows), squeeze=False)
 
-fig.suptitle("Points")
+#fig.suptitle("Points")
 
 for colIndex in range(len(cols)):
     axisX = colIndex % numCols
@@ -143,6 +152,10 @@ for colIndex in range(len(cols)):
     SetupPointPlot(ax[axisY][axisX], cols[colIndex])
     for x,y in zip(df[cols[colIndex] + " X"], df[cols[colIndex] + " Y"]):
         ax[axisY][axisX].plot(x, y, 'ro', ms = 3, mfc = 'r', clip_on=False, zorder=100)
+
+if (len(cols)) % numCols > 0:
+    for axisX in range((len(cols)) % numCols, numCols):
+        SetupPointPlot(ax[numRows-1][axisX], "")
 
 fig.tight_layout()
 fig.savefig("out/2DCirclePoints.png", bbox_inches='tight')

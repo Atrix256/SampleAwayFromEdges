@@ -93,7 +93,6 @@ std::vector<float1> Generate1D_Regular_Center_Equal(pcg32_random_t& rng, int num
 
 std::vector<float1> Generate1D_GoldenRatio(pcg32_random_t& rng, int numSamples, std::vector<float1>& lastSamples)
 {
-	static const float c_goldenRatioConjugate = 0.61803398875f;
 	float lastValue = 0.0f;
 	std::vector<float1> ret(numSamples);
 	for (float1& f : ret)

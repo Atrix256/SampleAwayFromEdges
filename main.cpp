@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 	//Do1DTests();
 
-	//Do2DSquareTests();
+	Do2DSquareTests();
 	Do2DCircleTests();
 
 	return 0;
@@ -48,9 +48,11 @@ int main(int argc, char** argv)
 
 /*
 TODO:
-* maybe do fibonacci spiral too for point in circle?
+* for 2d rectangle, do GenerateCircle_Fibonacci, but without the transformation to circle
 * r2, sobol, halton(2,3)?
- 
+* also probably should have some function for 2d square and circle that isn't separable.
+ * like sine of distance maybe.
+
 Notes:
 * this started it: https://mastodon.gamedev.place/@jkaniarz/110032776950329500
 * "ok so if you do 2 samples on the unit numberline, you can do it at 0, 0.5.  or 0.5 and 1. or you can center them, which gives you the 1/4, 3/4 setup."

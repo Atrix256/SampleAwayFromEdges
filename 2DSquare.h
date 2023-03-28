@@ -78,6 +78,19 @@ std::vector<float2> Generate2D_Stratified(pcg32_random_t& rng, int numSamples, s
 	return ret;
 }
 
+std::vector<float2> Generate2D_Fibonacci(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+	for (int i = 0; i < numSamples; ++i)
+	{
+		ret[i] = {
+			std::fmodf(0.5f + float(i) * c_goldenRatioConjugate, 1.0f),
+			(float(i) + 0.5f) / float(numSamples)
+		};
+	}
+	return ret;
+}
+
 std::vector<float2> Generate2D_Blue_Wrap(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
 {
 	std::vector<float2> ret;
@@ -220,6 +233,27 @@ std::vector<float2> Generate2D_Blue_NoWrap_HalfEdge(pcg32_random_t& rng, int num
 	return ret;
 }
 
+std::vector<float2> Generate2D_R2(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	static const float g = 1.32471795724474602596f;
+	static const float a1 = 1.0f / g;
+	static const float a2 = 1.0f / (g * g);
+
+	float lastX = 0.5f;
+	float lastY = 0.5f;
+
+	std::vector<float2> ret(numSamples);
+
+	for (float2& p : ret)
+	{
+		p = float2{ lastX, lastY };
+		lastX = std::fmodf(lastX + a1, 1.0f);
+		lastY = std::fmodf(lastY + a2, 1.0f);
+	}
+
+	return ret;
+}
+
 void Do2DSquareTests()
 {
 	printf("==================== 2D Square ====================\n");
@@ -230,6 +264,8 @@ void Do2DSquareTests()
 		{ "Regular Grid", Generate2D_RegularGrid },
 		{ "Hex Grid", Generate2D_HexGrid },
 		{ "Stratified", Generate2D_Stratified },
+		{ "Fibonacci", Generate2D_Fibonacci },
+		{ "R2", Generate2D_R2 },
 		{ "Blue - Wrap", Generate2D_Blue_Wrap },
 		{ "Blue - No Wrap", Generate2D_Blue_NoWrap },
 		{ "Blue - No Wrap Edge", Generate2D_Blue_NoWrap_Edge },
