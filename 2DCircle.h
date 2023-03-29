@@ -306,6 +306,125 @@ std::vector<float2> GenerateCircle_R2Circle(pcg32_random_t& rng, int numSamples,
 	return ret;
 }
 
+std::vector<float2> GenerateCircle_Halton23(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret;
+
+	int index = 1;
+	while (ret.size() < numSamples)
+	{
+		float2 p = {
+			Halton(index, 2),
+			Halton(index, 3)
+		};
+		index++;
+
+		if (Distance(p, float2{ 0.5f, 0.5f }) < 0.5f)
+			ret.push_back(p);
+	}
+
+	return ret;
+}
+
+std::vector<float2> GenerateCircle_Halton23Circle(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret = Generate2D_Halton23(rng, numSamples, lastSamples);
+
+	// convert from square to circle
+	for (float2& p : ret)
+	{
+		float theta = p[0] * 2.0f * c_pi;
+		float radius = std::sqrt(p[1]);
+
+		p[0] = 0.5f + std::cos(theta) * 0.5f * radius;
+		p[1] = 0.5f + std::sin(theta) * 0.5f * radius;
+	}
+
+	return ret;
+}
+
+std::vector<float2> GenerateCircle_Sobol(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret;
+
+	int index = 0;
+	while (ret.size() < numSamples)
+	{
+		uint4 s = Sobol(index);
+
+		float2 p = {
+			float(s[0]) / pow(2.0f, 32.0f),
+			float(s[1]) / pow(2.0f, 32.0f)
+		};
+		index++;
+
+		if (Distance(p, float2{ 0.5f, 0.5f }) < 0.5f)
+			ret.push_back(p);
+	}
+
+	return ret;
+}
+
+std::vector<float2> GenerateCircle_SobolCircle(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret = Generate2D_Sobol(rng, numSamples, lastSamples);
+
+	// convert from square to circle
+	for (float2& p : ret)
+	{
+		float theta = p[0] * 2.0f * c_pi;
+		float radius = std::sqrt(p[1]);
+
+		p[0] = 0.5f + std::cos(theta) * 0.5f * radius;
+		p[1] = 0.5f + std::sin(theta) * 0.5f * radius;
+	}
+
+	return ret;
+}
+
+std::vector<float2> GenerateCircle_BurleySobol(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret;
+
+	uint32_t seed = pcg32_random_r(&rng);
+
+	int index = 0;
+	while (ret.size() < numSamples)
+	{
+		uint4 s = ShuffledScrambledSobol(index, seed);
+
+		float2 p = {
+			float(s[0]) / pow(2.0f, 32.0f),
+			float(s[1]) / pow(2.0f, 32.0f)
+		};
+		index++;
+
+		if (Distance(p, float2{ 0.5f, 0.5f }) < 0.5f)
+			ret.push_back(p);
+	}
+
+	return ret;
+}
+
+std::vector<float2> GenerateCircle_BurleySobolCircle(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret = Generate2D_BurleySobol(rng, numSamples, lastSamples);
+
+	uint32_t seed = pcg32_random_r(&rng);
+
+	// convert from square to circle
+	for (float2& p : ret)
+	{
+		float theta = p[0] * 2.0f * c_pi;
+		float radius = std::sqrt(p[1]);
+
+		p[0] = 0.5f + std::cos(theta) * 0.5f * radius;
+		p[1] = 0.5f + std::sin(theta) * 0.5f * radius;
+	}
+
+	return ret;
+}
+
 void Do2DCircleTests()
 {
 	printf("==================== 2D Circle ====================\n");
@@ -321,6 +440,12 @@ void Do2DCircleTests()
 		{ "Stratified Circle", GenerateCircle_StratifiedCircle },
 		{ "R2", GenerateCircle_R2 },
 		{ "R2 Circle", GenerateCircle_R2Circle },
+		{ "Halton23", GenerateCircle_Halton23 },
+		{ "Halton23 Circle", GenerateCircle_Halton23Circle },
+		{ "Sobol", GenerateCircle_Sobol},
+		{ "Sobol Circle", GenerateCircle_SobolCircle },
+		{ "Burley Sobol", GenerateCircle_BurleySobol},
+		{ "Burley Sobol Circle", GenerateCircle_BurleySobolCircle },
 		{ "Fibonacci", GenerateCircle_Fibonacci },
 		{ "Blue - No Wrap", GenerateCircle_Blue_NoWrap },
 		{ "Blue - No Wrap Edge", GenerateCircle_Blue_NoWrap_Edge },

@@ -17,6 +17,7 @@
     <ClInclude Include="shared.h" />
     <ClInclude Include="2DSquare.h" />
     <ClInclude Include="2DCircle.h" />
+    <ClInclude Include="sobol.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb">

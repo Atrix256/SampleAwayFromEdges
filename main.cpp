@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 {
 	_mkdir("out");
 
-	//Do1DTests();
+	Do1DTests();
 
 	Do2DSquareTests();
 	Do2DCircleTests();
@@ -48,8 +48,7 @@ int main(int argc, char** argv)
 
 /*
 TODO:
-* for 2d rectangle, do GenerateCircle_Fibonacci, but without the transformation to circle
-* r2, sobol, halton(2,3)?
+* break the LDS into their own graph. keep stratified and white to have them common to all graphs
 * also probably should have some function for 2d square and circle that isn't separable.
  * like sine of distance maybe.
 

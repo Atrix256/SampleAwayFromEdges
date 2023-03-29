@@ -254,6 +254,43 @@ std::vector<float2> Generate2D_R2(pcg32_random_t& rng, int numSamples, std::vect
 	return ret;
 }
 
+std::vector<float2> Generate2D_Halton23(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+	for (int i = 0; i < numSamples; ++i)
+	{
+		ret[i][0] = Halton(i + 1, 2);
+		ret[i][1] = Halton(i + 1, 3);
+	}
+	return ret;
+}
+
+std::vector<float2> Generate2D_Sobol(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+	for (int i = 0; i < numSamples; ++i)
+	{
+		uint4 s = Sobol(i);
+		ret[i][0] = float(s[0]) / pow(2.0f, 32.0f);
+		ret[i][1] = float(s[1]) / pow(2.0f, 32.0f);
+	}
+	return ret;
+}
+
+std::vector<float2> Generate2D_BurleySobol(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	uint32_t seed = pcg32_random_r(&rng);
+
+	std::vector<float2> ret(numSamples);
+	for (int i = 0; i < numSamples; ++i)
+	{
+		uint4 s = ShuffledScrambledSobol(i, seed);
+		ret[i][0] = float(s[0]) / pow(2.0f, 32.0f);
+		ret[i][1] = float(s[1]) / pow(2.0f, 32.0f);
+	}
+	return ret;
+}
+
 void Do2DSquareTests()
 {
 	printf("==================== 2D Square ====================\n");
@@ -266,6 +303,9 @@ void Do2DSquareTests()
 		{ "Stratified", Generate2D_Stratified },
 		{ "Fibonacci", Generate2D_Fibonacci },
 		{ "R2", Generate2D_R2 },
+		{ "Halton23", Generate2D_Halton23 },
+		{ "Sobol", Generate2D_Sobol },
+		{ "Burley Sobol", Generate2D_BurleySobol },
 		{ "Blue - Wrap", Generate2D_Blue_Wrap },
 		{ "Blue - No Wrap", Generate2D_Blue_NoWrap },
 		{ "Blue - No Wrap Edge", Generate2D_Blue_NoWrap_Edge },

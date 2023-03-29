@@ -83,6 +83,7 @@
     <ClInclude Include="2DSquare.h" />
     <ClInclude Include="pcg\pcg_basic.h" />
     <ClInclude Include="shared.h" />
+    <ClInclude Include="sobol.h" />
     <ClInclude Include="stb\stb_image_write.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

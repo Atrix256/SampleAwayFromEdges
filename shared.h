@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sobol.h"
+
 #include <array>
 #include <vector>
 
@@ -171,4 +173,23 @@ void DoTests(const char* label, T(&noiseTypes)[N], int testCount, int pointCount
 
 		fclose(file);
 	}
+}
+
+inline float Halton(int index, float base)
+{
+	float result = 0.0f;
+	float f = 1.0f / base;
+	float i = float(index);
+
+	for (int x = 0; x < 8; x++)
+	{
+		if (i <= 0.0)
+			break;
+
+		result += f * fmod(i, base);
+		i = floor(i / base);
+		f = f / base;
+	}
+
+	return result;
 }
