@@ -14,11 +14,6 @@ graphs = [
             "Stratified",
             "Regular Grid",
             "Hex Grid",
-            "R2",
-            "Halton23",
-            "Burley Sobol",
-            "Sobol",
-            "Fibonacci",
             ]
     },
     {
@@ -30,6 +25,54 @@ graphs = [
             "Stratified",
             "Regular Grid",
             "Hex Grid",
+            ]
+    },
+    {
+        "title": "Regular Non Separable",
+        "source": "out/2DSquareResultsNonSeparable.csv",
+        "dest": "out/2DSquareNonSeparableRegular",
+        "cols":[
+            "White",
+            "Stratified",
+            "Regular Grid",
+            "Hex Grid",
+            ]
+    },
+    {
+        "title": "LDS Smooth",
+        "source": "out/2DSquareResultsSmooth.csv",
+        "dest": "out/2DSquareSmoothLDS",
+        "cols":[
+            "White",
+            "Stratified",
+            "R2",
+            "Halton23",
+            "Burley Sobol",
+            "Sobol",
+            "Fibonacci",
+            ]
+    },
+    {
+        "title": "LDS Non Smooth",
+        "source": "out/2DSquareResultsNonSmooth.csv",
+        "dest": "out/2DSquareNonSmoothLDS",
+        "cols":[
+            "White",
+            "Stratified",
+            "R2",
+            "Halton23",
+            "Burley Sobol",
+            "Sobol",
+            "Fibonacci",
+            ]
+    },
+    {
+        "title": "LDS Non Separable",
+        "source": "out/2DSquareResultsNonSeparable.csv",
+        "dest": "out/2DSquareNonSeparableLDS",
+        "cols":[
+            "White",
+            "Stratified",
             "R2",
             "Halton23",
             "Burley Sobol",
@@ -54,6 +97,19 @@ graphs = [
         "title": "Blue Non Smooth",
         "source": "out/2DSquareResultsNonSmooth.csv",
         "dest": "out/2DSquareNonSmoothBlue",
+        "cols":[
+            "White",
+            "Stratified",
+            "Blue - Wrap",
+            "Blue - No Wrap",
+            "Blue - No Wrap Edge",
+            "Blue - No Wrap Half Edge",
+            ]
+    },
+    {
+        "title": "Blue Non Separable",
+        "source": "out/2DSquareResultsNonSeparable.csv",
+        "dest": "out/2DSquareNonSeparableBlue",
         "cols":[
             "White",
             "Stratified",

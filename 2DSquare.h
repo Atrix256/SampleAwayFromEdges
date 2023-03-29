@@ -442,6 +442,63 @@ void Do2DSquareTests()
 		}
 	);
 
+	// Non separable tests
+	DoTests(
+		"Non Separable",
+		noiseTypes,
+		c_2DTestCount,
+		c_2DTestPointCount,
+		"out/2DSquareResultsNonSeparable.csv",
+		[&](int testIndex, pcg32_random_t& rng)
+		{
+			// Generate a random xy translation, and xy scale.
+			float parameters[4];
+			for (int i = 0; i < 4; ++i)
+				parameters[i] = RandomFloatRange(rng, c_2DTestControlPointMin, c_2DTestControlPointMax);
+
+			auto F = [&](const float2& p)
+			{
+				float dx = (p[0] - parameters[0]) * parameters[2];
+				float dy = (p[1] - parameters[1]) * parameters[3];
+				return std::sin(std::sqrt(dx * dx + dy * dy));
+			};
+
+			// Calculate actual value through monte carlo integration
+			float actualValue = 0.0f;
+			for (int i = 0; i < c_2DCircleActualValueSamples; ++i)
+			{
+				float2 p = float2{ RandomFloat01(rng), RandomFloat01(rng) };
+				float y = F(p);
+				actualValue = Lerp(actualValue, y, 1.0f / float(i + 1));
+			}
+
+			// for each type of noise
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+			{
+				Noise<2>& noise = noiseTypes[noiseIndex];
+
+				// for each sample count in the test
+				std::vector<float2> samples;
+				for (int pointIndex = 0; pointIndex < c_2DTestPointCount; ++pointIndex)
+				{
+					// generate the samples
+					samples = noise.Generate(rng, pointIndex + 1, samples);
+
+					// integrate!
+					float yAvg = 0.0f;
+					for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
+					{
+						float y = F(samples[sampleIndex]);
+						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
+					}
+
+					// store the error
+					noise.error[testIndex * c_2DTestPointCount + pointIndex] = std::abs(yAvg - actualValue);
+				}
+			}
+		}
+	);
+
 	// write out example sample points
 	{
 		pcg32_random_t rng = GetRNG(0);

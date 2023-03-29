@@ -410,8 +410,6 @@ std::vector<float2> GenerateCircle_BurleySobolCircle(pcg32_random_t& rng, int nu
 {
 	std::vector<float2> ret = Generate2D_BurleySobol(rng, numSamples, lastSamples);
 
-	uint32_t seed = pcg32_random_r(&rng);
-
 	// convert from square to circle
 	for (float2& p : ret)
 	{
@@ -603,6 +601,70 @@ void Do2DCircleTests()
 
 						float y = Lerp(cpX0, cpX1, fractY);
 
+						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
+					}
+
+					// store the error
+					noise.error[testIndex * c_2DTestPointCount + pointIndex] = std::abs(yAvg - actualValue);
+				}
+			}
+		}
+	);
+
+	// Non separable tests
+	DoTests(
+		"Non Separable",
+		noiseTypes,
+		c_2DTestCount,
+		c_2DTestPointCount,
+		"out/2DCircleResultsNonSeparable.csv",
+		[&](int testIndex, pcg32_random_t& rng)
+		{
+			// Generate a random xy translation, and xy scale.
+			float parameters[4];
+			for (int i = 0; i < 4; ++i)
+				parameters[i] = RandomFloatRange(rng, c_2DTestControlPointMin, c_2DTestControlPointMax);
+
+			auto F = [&](const float2& p)
+			{
+				float dx = (p[0] - parameters[0]) * parameters[2];
+				float dy = (p[1] - parameters[1]) * parameters[3];
+				return std::sin(std::sqrt(dx * dx + dy * dy));
+			};
+
+			// Calculate actual value through monte carlo integration
+			float actualValue = 0.0f;
+			for (int i = 0; i < c_2DCircleActualValueSamples; ++i)
+			{
+				float theta = 2.0f * c_pi * RandomFloat01(rng);
+				float radius = std::sqrt(RandomFloat01(rng));
+
+				float2 p = float2{
+					0.5f + std::cos(theta) * 0.5f * radius,
+					0.5f + std::sin(theta) * 0.5f * radius
+				};
+
+				float y = F(p);
+				actualValue = Lerp(actualValue, y, 1.0f / float(i + 1));
+			}
+
+			// for each type of noise
+			for (int noiseIndex = 0; noiseIndex < _countof(noiseTypes); ++noiseIndex)
+			{
+				Noise<2>& noise = noiseTypes[noiseIndex];
+
+				// for each sample count in the test
+				std::vector<float2> samples;
+				for (int pointIndex = 0; pointIndex < c_2DTestPointCount; ++pointIndex)
+				{
+					// generate the samples
+					samples = noise.Generate(rng, pointIndex + 1, samples);
+
+					// integrate!
+					float yAvg = 0.0f;
+					for (int sampleIndex = 0; sampleIndex < pointIndex + 1; ++sampleIndex)
+					{
+						float y = F(samples[sampleIndex]);
 						yAvg = Lerp(yAvg, y, 1.0f / float(sampleIndex + 1));
 					}
 

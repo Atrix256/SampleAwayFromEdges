@@ -11,21 +11,10 @@ graphs = [
         "dest": "out/2DCircleSmoothRegular",
         "cols":[
             "White",
-            "Regular Grid",
-            "Regular Grid Circle",
             "Stratified",
-            "Stratified Circle",
+            "Fibonacci",            
+            "Regular Grid",
             "Hex Grid",
-            "Hex Grid Circle",
-            "R2",
-            "R2 Circle",
-            "Halton23",
-            "Halton23 Circle",
-            "Sobol",
-            "Sobol Circle",
-            "Burley Sobol",
-            "Burley Sobol Circle",
-            "Fibonacci",
             ]
     },
     {
@@ -35,22 +24,74 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
-            "Stratified Circle",
+            "Fibonacci",            
             "Regular Grid",
-            "Regular Grid Circle",
             "Hex Grid",
-            "Hex Grid Circle",
+            ]
+    },
+    {
+        "title": "Regular Non Separable",
+        "source": "out/2DCircleResultsNonSeparable.csv",
+        "dest": "out/2DCircleNonSeparableRegular",
+        "cols":[
+            "White",
+            "Stratified",
+            "Fibonacci",
+            "Regular Grid",
+            "Hex Grid",
+            ]
+    },    
+    {
+        "title": "LDS Smooth",
+        "source": "out/2DCircleResultsSmooth.csv",
+        "dest": "out/2DCircleSmoothLDS",
+        "cols":[
+            "White",
+            "Stratified",
+            "Fibonacci",
             "R2",
-            "R2 Circle",
             "Halton23",
             "Halton23 Circle",
             "Sobol",
-            "Sobol Circle",            
+            "Sobol Circle",
             "Burley Sobol",
-            "Burley Sobol Circle",            
-            "Fibonacci",
+            "Burley Sobol Circle",
             ]
     },
+    {
+        "title": "LDS Non Smooth",
+        "source": "out/2DCircleResultsNonSmooth.csv",
+        "dest": "out/2DCircleNonSmoothLDS",
+        "cols":[
+            "White",
+            "Stratified",
+            "Fibonacci",            
+            "R2",
+            "Halton23",
+            "Halton23 Circle",
+            "Sobol",
+            "Sobol Circle",
+            "Burley Sobol",
+            "Burley Sobol Circle",
+            ]
+    },
+    {
+        "title": "LDS Non Separable",
+        "source": "out/2DCircleResultsNonSeparable.csv",
+        "dest": "out/2DCircleNonSeparableLDS",
+        "cols":[
+            "White",
+            "Stratified",
+            "Fibonacci",            
+            "R2",
+            "Halton23",
+            "Halton23 Circle",
+            "Sobol",
+            "Sobol Circle",
+            "Burley Sobol",
+            "Burley Sobol Circle",
+            ]
+    },    
     {
         "title": "Blue Smooth",
         "source": "out/2DCircleResultsSmooth.csv",
@@ -75,6 +116,18 @@ graphs = [
             "Blue - No Wrap Half Edge",
             ]
     },
+    {
+        "title": "Blue Non Separable",
+        "source": "out/2DCircleResultsNonSeparable.csv",
+        "dest": "out/2DCircleNonSeparableBlue",
+        "cols":[
+            "White",
+            "Stratified",
+            "Blue - No Wrap",
+            "Blue - No Wrap Edge",
+            "Blue - No Wrap Half Edge",
+            ]
+    },    
 ]
 
 for graph in graphs:
