@@ -44,19 +44,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-
-/*
-
-Notes:
-* this started it: https://mastodon.gamedev.place/@jkaniarz/110032776950329500
-* "ok so if you do 2 samples on the unit numberline, you can do it at 0, 0.5.  or 0.5 and 1. or you can center them, which gives you the 1/4, 3/4 setup."
-* show the math for how easy it is to integrate tensor product bezier surfaces.
-* may be better to find factors of numPoints instead of doing the square root dance. not doing it here though.
-* 2d circle stratified stratifies the square, then maps square to circle
-* 2d regular and hex grid clip to the circle, and then add random points in circle to fill up the rest.
-* Note that for more complex shapes, an SDF would work for blue noise candidate scoring
-* these sample counts are pretty low. R2 usually does better, at higher than these sample counts.
-* stratified and stratified circle did basically the same
- * i omitted the obviously bad "circle" things like hex. they didn't do well and just cluttered the graph
-
-*/

@@ -321,7 +321,7 @@ void Do2DSquareTests()
 		"out/2DSquareResultsSmooth.csv",
 		[&](int testIndex, pcg32_random_t& rng)
 		{
-			// Generate a 4x4 grid of random numbers to be the control points of our biquadratic bezier surface
+			// Generate a 4x4 grid of random numbers to be the control points of our bicubic bezier surface
 			float controlPoints[16];
 			for (int i = 0; i < 16; ++i)
 				controlPoints[i] = RandomFloatRange(rng, c_2DTestControlPointMin, c_2DTestControlPointMax);
