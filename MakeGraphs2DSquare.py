@@ -12,7 +12,10 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
-            "Regular Grid",
+            "Regular - Ends",
+            "Regular - Left",
+            "Regular - Center",
+            "Regular - Center Equal",
             "Hex Grid",
             ]
     },
@@ -23,7 +26,10 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
-            "Regular Grid",
+            "Regular - Ends",
+            "Regular - Left",
+            "Regular - Center",
+            "Regular - Center Equal",
             "Hex Grid",
             ]
     },
@@ -34,7 +40,10 @@ graphs = [
         "cols":[
             "White",
             "Stratified",
-            "Regular Grid",
+            "Regular - Ends",
+            "Regular - Left",
+            "Regular - Center",
+            "Regular - Center Equal",
             "Hex Grid",
             ]
     },
@@ -182,7 +191,10 @@ def SetupPointPlot(ax, title):
 cols = [
     "White",
     "Stratified",
-    "Regular Grid",
+    "Regular - Ends",
+    "Regular - Left",
+    "Regular - Center",
+    "Regular - Center Equal",
     "Hex Grid",
     "R2",
     "Halton23",
@@ -195,7 +207,7 @@ cols = [
     "Blue - No Wrap Half Edge",
 ]
 
-numCols = 3
+numCols = 4
 numRows = int(math.ceil(len(cols) / numCols))
 
 df = pd.read_csv("out/2DPoints.csv")

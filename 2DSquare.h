@@ -3,7 +3,55 @@
 #include "shared.h"
 #include "1D.h"
 
-std::vector<float2> Generate2D_RegularGrid(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+std::vector<float2> Generate2D_RegularGrid_Ends(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+
+	// Do the full nearly square grid that is <= the number of points we want to sample.
+	int sideX = int(std::sqrt(numSamples));
+	int sideY = numSamples / sideX;
+	int gridSamples = sideX * sideY;
+	for (int i = 0; i < gridSamples; ++i)
+	{
+		ret[i][0] = (float(i % sideX)) / float(sideX - 1);
+		ret[i][1] = (float(i / sideX)) / float(sideY - 1);
+	}
+
+	// Do the remainder of the samples as white noise.
+	for (int i = gridSamples; i < numSamples; ++i)
+	{
+		ret[i][0] = RandomFloat01(rng);
+		ret[i][1] = RandomFloat01(rng);
+	}
+
+	return ret;
+}
+
+std::vector<float2> Generate2D_RegularGrid_Left(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+
+	// Do the full nearly square grid that is <= the number of points we want to sample.
+	int sideX = int(std::sqrt(numSamples));
+	int sideY = numSamples / sideX;
+	int gridSamples = sideX * sideY;
+	for (int i = 0; i < gridSamples; ++i)
+	{
+		ret[i][0] = (float(i % sideX)) / float(sideX);
+		ret[i][1] = (float(i / sideX)) / float(sideY);
+	}
+
+	// Do the remainder of the samples as white noise.
+	for (int i = gridSamples; i < numSamples; ++i)
+	{
+		ret[i][0] = RandomFloat01(rng);
+		ret[i][1] = RandomFloat01(rng);
+	}
+
+	return ret;
+}
+
+std::vector<float2> Generate2D_RegularGrid_Center(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
 {
 	std::vector<float2> ret(numSamples);
 
@@ -15,6 +63,30 @@ std::vector<float2> Generate2D_RegularGrid(pcg32_random_t& rng, int numSamples, 
 	{
 		ret[i][0] = (float(i % sideX) + 0.5f) / float(sideX);
 		ret[i][1] = (float(i / sideX) + 0.5f) / float(sideY);
+	}
+
+	// Do the remainder of the samples as white noise.
+	for (int i = gridSamples; i < numSamples; ++i)
+	{
+		ret[i][0] = RandomFloat01(rng);
+		ret[i][1] = RandomFloat01(rng);
+	}
+
+	return ret;
+}
+
+std::vector<float2> Generate2D_RegularGrid_CenterEqual(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+
+	// Do the full nearly square grid that is <= the number of points we want to sample.
+	int sideX = int(std::sqrt(numSamples));
+	int sideY = numSamples / sideX;
+	int gridSamples = sideX * sideY;
+	for (int i = 0; i < gridSamples; ++i)
+	{
+		ret[i][0] = (float(i % sideX) + 1.0f) / float(sideX + 1);
+		ret[i][1] = (float(i / sideX) + 1.0f) / float(sideY + 1);
 	}
 
 	// Do the remainder of the samples as white noise.
@@ -298,7 +370,10 @@ void Do2DSquareTests()
 	Noise<2> noiseTypes[] =
 	{
 		{ "White", Generate_White<2> },
-		{ "Regular Grid", Generate2D_RegularGrid },
+		{ "Regular - Ends", Generate2D_RegularGrid_Ends },
+		{ "Regular - Left", Generate2D_RegularGrid_Left },
+		{ "Regular - Center", Generate2D_RegularGrid_Center },
+		{ "Regular - Center Equal", Generate2D_RegularGrid_CenterEqual },
 		{ "Hex Grid", Generate2D_HexGrid },
 		{ "Stratified", Generate2D_Stratified },
 		{ "Fibonacci", Generate2D_Fibonacci },

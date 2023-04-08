@@ -28,7 +28,7 @@ std::vector<float2> GenerateCircle_RegularGrid(pcg32_random_t& rng, int numSampl
 	int numSamplesOrig = numSamples;
 	do
 	{
-		ret = Generate2D_RegularGrid(rng, numSamples, ret);
+		ret = Generate2D_RegularGrid_Center(rng, numSamples, ret);
 
 		// remove any points outside of the circle
 		ret.erase(std::remove_if(ret.begin(), ret.end(),
@@ -49,7 +49,7 @@ std::vector<float2> GenerateCircle_RegularGrid(pcg32_random_t& rng, int numSampl
 
 std::vector<float2> GenerateCircle_RegularGridCircle(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
 {
-	std::vector<float2> ret = Generate2D_RegularGrid(rng, numSamples, lastSamples);
+	std::vector<float2> ret = Generate2D_RegularGrid_Center(rng, numSamples, lastSamples);
 
 	// convert from square to circle
 	for (float2& p : ret)
