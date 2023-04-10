@@ -99,6 +99,74 @@ std::vector<float2> Generate2D_RegularGrid_CenterEqual(pcg32_random_t& rng, int 
 	return ret;
 }
 
+std::vector<float2> Generate2D_RegularGrid_Lattice(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	float sqrtNumSamples = std::sqrt(float(numSamples));
+
+	// I took these points from a plot of Generate2D_Fibonacci.
+	// Y is inverted since the graph is
+	float2 A = float2{ 1480.0f, -1174.0f }; // bottom
+	float2 B = float2{ 1460.0f, -1163.0f }; // upper left
+	float2 C = float2{ 1493.0f, -1156.0f }; // upper right
+
+	// These are the axes of the lattice
+	float2 AB = Normalize(B - A);
+	float2 AC = Normalize(C - A);
+
+	// M is the matrix that converts regular grid points into lattice points.
+	// M inverse is the matrix that converts lattice points into regular grid points.
+	// Scale m by 1/sqrtNumSamples to get ~ the right number of lattice points.
+	float2x2 M = { AB, AC };
+	M[0] /= sqrtNumSamples;
+	M[1] /= sqrtNumSamples;
+	float2x2 MInv = Inverse(M);
+
+	// Get the regular grid bounding box to evaluate, to encompass the lattice unit square
+	float2 corners[4] =
+	{
+		Transform(float2{0.0f, 0.0f}, MInv),
+		Transform(float2{0.0f, 1.0f}, MInv),
+		Transform(float2{1.0f, 0.0f}, MInv),
+		Transform(float2{1.0f, 1.0f}, MInv),
+	};
+	float2 BBMin = corners[0];
+	float2 BBMax = corners[0];
+	for (int i = 1; i < 4; ++i)
+	{
+		BBMin = Min(BBMin, corners[i]);
+		BBMax = Max(BBMax, corners[i]);
+	}
+	BBMin[0] = std::floor(BBMin[0]);
+	BBMin[1] = std::floor(BBMin[1]);
+	BBMax[0] = std::ceil(BBMax[0]);
+	BBMax[1] = std::ceil(BBMax[1]);
+
+	// generate points in regular grid space, convert to lattice space,
+	// and keep the points only if they are within [0,1] of lattice space.
+	std::vector<float2> ret;
+	for (int iy = (int)BBMin[1]; iy <= (int)BBMax[1]; ++iy)
+	{
+		for (int ix = (int)BBMin[0]; ix <= (int)BBMax[0]; ++ix)
+		{
+			float2 p = Transform(float2{ float(ix), float(iy) }, M);
+			if (p[0] >= 0.0f && p[0] <= 1.0f && p[1] >= 0.0f && p[1] <= 1.0f)
+				ret.push_back(p);
+		}
+	}
+
+	if (ret.size() < numSamples)
+	{
+		while (ret.size() < numSamples)
+			ret.push_back(float2{ RandomFloat01(rng), RandomFloat01(rng) });
+	}
+	else if (ret.size() > numSamples)
+	{
+		ret.resize(numSamples);
+	}
+
+	return ret;
+}
+
 std::vector<float2> Generate2D_HexGrid(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
 {
 	std::vector<float2> ret(numSamples);
@@ -158,6 +226,19 @@ std::vector<float2> Generate2D_Fibonacci(pcg32_random_t& rng, int numSamples, st
 		ret[i] = {
 			std::fmodf(0.5f + float(i) * c_goldenRatioConjugate, 1.0f),
 			(float(i) + 0.5f) / float(numSamples)
+		};
+	}
+	return ret;
+}
+
+std::vector<float2> Generate2D_Fibonacci_Simple(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+	for (int i = 0; i < numSamples; ++i)
+	{
+		ret[i] = {
+			std::fmodf(float(i) * c_goldenRatioConjugate, 1.0f),
+			float(i) / float(numSamples)
 		};
 	}
 	return ret;
@@ -374,9 +455,11 @@ void Do2DSquareTests()
 		{ "Regular - Left", Generate2D_RegularGrid_Left },
 		{ "Regular - Center", Generate2D_RegularGrid_Center },
 		{ "Regular - Center Equal", Generate2D_RegularGrid_CenterEqual },
+		{ "Regular - Lattice", Generate2D_RegularGrid_Lattice },
 		{ "Hex Grid", Generate2D_HexGrid },
 		{ "Stratified", Generate2D_Stratified },
 		{ "Fibonacci", Generate2D_Fibonacci },
+		{ "Fibonacci Simple", Generate2D_Fibonacci_Simple },
 		{ "R2", Generate2D_R2 },
 		{ "Halton23", Generate2D_Halton23 },
 		{ "Sobol", Generate2D_Sobol },

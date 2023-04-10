@@ -64,6 +64,23 @@ std::vector<float2> GenerateCircle_RegularGridCircle(pcg32_random_t& rng, int nu
 	return ret;
 }
 
+std::vector<float2> GenerateCircle_RegularGrid_Lattice(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret = Generate2D_RegularGrid_Lattice(rng, numSamples, lastSamples);
+
+	// convert from square to circle
+	for (float2& p : ret)
+	{
+		float theta = p[0] * 2.0f * c_pi;
+		float radius = std::sqrt(p[1]);
+
+		p[0] = 0.5f + std::cos(theta) * 0.5f * radius;
+		p[1] = 0.5f + std::sin(theta) * 0.5f * radius;
+	}
+
+	return ret;
+}
+
 std::vector<float2> GenerateCircle_HexGrid(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
 {
 	// iteratively reject points in the circle and increase the number of points generated
@@ -151,6 +168,20 @@ std::vector<float2> GenerateCircle_Fibonacci(pcg32_random_t& rng, int numSamples
 		float theta = 2.0f * c_pi * std::fmodf(0.5f + float(i) * c_goldenRatioConjugate, 1.0f);
 		float radius = std::sqrt((float(i)+0.5f) / float(numSamples));
 		ret[i] = {0.5f + std::cos(theta) * 0.5f * radius, 0.5f + std::sin(theta) * 0.5f * radius};
+	}
+
+	return ret;
+}
+
+std::vector<float2> GenerateCircle_Fibonacci_Simple(pcg32_random_t& rng, int numSamples, std::vector<float2>& lastSamples)
+{
+	std::vector<float2> ret(numSamples);
+
+	for (int i = 0; i < numSamples; ++i)
+	{
+		float theta = 2.0f * c_pi * std::fmodf(float(i) * c_goldenRatioConjugate, 1.0f);
+		float radius = std::sqrt(float(i) / float(numSamples));
+		ret[i] = { 0.5f + std::cos(theta) * 0.5f * radius, 0.5f + std::sin(theta) * 0.5f * radius };
 	}
 
 	return ret;
@@ -432,6 +463,7 @@ void Do2DCircleTests()
 		{ "White", GenerateCircle_White },
 		{ "Regular Grid", GenerateCircle_RegularGrid },
 		{ "Regular Grid Circle", GenerateCircle_RegularGridCircle },
+		{ "Regular Lattice Circle", GenerateCircle_RegularGrid_Lattice },
 		{ "Hex Grid", GenerateCircle_HexGrid },
 		{ "Hex Grid Circle", GenerateCircle_HexGridCircle },
 		{ "Stratified", GenerateCircle_Stratified },
@@ -445,6 +477,7 @@ void Do2DCircleTests()
 		{ "Burley Sobol", GenerateCircle_BurleySobol},
 		{ "Burley Sobol Circle", GenerateCircle_BurleySobolCircle },
 		{ "Fibonacci", GenerateCircle_Fibonacci },
+		{ "Fibonacci Simple", GenerateCircle_Fibonacci_Simple },
 		{ "Blue - No Wrap", GenerateCircle_Blue_NoWrap },
 		{ "Blue - No Wrap Edge", GenerateCircle_Blue_NoWrap_Edge },
 		{ "Blue - No Wrap Half Edge", GenerateCircle_Blue_NoWrap_HalfEdge },

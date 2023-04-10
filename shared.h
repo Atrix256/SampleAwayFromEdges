@@ -7,6 +7,7 @@
 
 typedef std::array<float, 1> float1;
 typedef std::array<float, 2> float2;
+typedef std::array<float2, 2> float2x2; // indexed by [row][column]
 
 static const float c_pi = 3.14159265359f;
 static const float c_goldenRatioConjugate = 0.61803398875f;
@@ -192,4 +193,120 @@ inline float Halton(int index, float base)
 	}
 
 	return result;
+}
+
+inline float2 operator + (const float2& A, const float2& B)
+{
+	return float2{ A[0] + B[0], A[1] + B[1] };
+}
+
+inline float2 operator - (const float2& A, const float2& B)
+{
+	return float2{ A[0] - B[0], A[1] - B[1] };
+}
+
+inline float2 operator * (const float2& A, const float& B)
+{
+	return float2{ A[0] * B, A[1] * B };
+}
+
+inline float2 operator *= (float2& A, const float& B)
+{
+	A[0] *= B;
+	A[1] *= B;
+	return A;
+}
+
+inline float2 operator /= (float2& A, const float& B)
+{
+	A[0] /= B;
+	A[1] /= B;
+	return A;
+}
+
+inline float2 operator += (float2& A, const float2& B)
+{
+	A[0] += B[0];
+	A[1] += B[1];
+	return A;
+}
+
+inline float2 operator -= (float2& A, const float2& B)
+{
+	A[0] -= B[0];
+	A[1] -= B[1];
+	return A;
+}
+
+inline float2 Normalize(const float2& V)
+{
+	float len = std::sqrt(V[0] * V[0] + V[1] * V[1]);
+	return float2{ V[0] / len, V[1] / len };
+}
+
+// Gauss jordan elimination
+inline float2x2 Inverse(float2x2 M)
+{
+	float2x2 ret = { float2{1.0f, 0.0f}, float2{0.0f, 1.0f} };
+
+	// for better results, make sure row 0 col 0 has the largest magnitude of all rows at col 0
+	if (std::abs(M[0][0]) < std::abs(M[1][0]))
+	{
+		std::swap(M[0], M[1]);
+		std::swap(ret[0], ret[1]);
+	}
+
+	// divide [0][*] by [0][0] to make [0][0] be a 1
+	{
+		float scale = 1.0f / M[0][0];
+		M[0] *= scale;
+		ret[0] *= scale;
+	}
+
+	// subtract [0][*] from [1][*] multiplied by [1][0], to make it have a 0 in column 0
+	{
+		float scale = M[1][0];
+		M[1] -= M[0] * scale;
+		ret[1] -= ret[0] * scale;
+	}
+
+	// divide [1][*] by [1][1] to make [1][1] be a 1
+	{
+		float scale = 1.0f / M[1][1];
+		M[1] *= scale;
+		ret[1] *= scale;
+	}
+
+	// subtract [1][*] from [0][*] multiplied by [0][1], to make it have a 0 in column 1
+	{
+		float scale = M[0][1];
+		M[0] -= M[1] * scale;
+		ret[0] -= ret[1] * scale;
+	}
+
+	return ret;
+}
+
+float2 Transform(const float2& V, const float2x2& M)
+{
+	return float2{
+		V[0] * M[0][0] + V[1] * M[1][0],
+		V[0] * M[0][1] + V[1] * M[1][1]
+	};
+}
+
+float2 Min(const float2& A, const float2& B)
+{
+	return float2{
+		std::min(A[0], B[0]),
+		std::min(A[1], B[1])
+	};
+}
+
+float2 Max(const float2& A, const float2& B)
+{
+	return float2{
+		std::max(A[0], B[0]),
+		std::max(A[1], B[1])
+	};
 }

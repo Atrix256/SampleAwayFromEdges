@@ -230,3 +230,27 @@ if (len(cols)) % numCols > 0:
 fig.tight_layout()
 fig.savefig("out/2DSquarePoints.png", bbox_inches='tight')
 fig.savefig("out/2DSquarePoints.pdf", bbox_inches='tight')
+
+# Make the secondary numberline
+
+cols = [
+    "Fibonacci Simple",
+    "Regular - Lattice"
+]
+
+fig, ax = plt.subplots(1, 3, figsize=(12, 4))
+SetupPointPlot(ax[0], "Fibonacci (Red) vs Lattice (Green)")
+SetupPointPlot(ax[1], "Fibonacci")
+SetupPointPlot(ax[2], "Lattice")
+
+for x,y in zip(df[cols[0] + " X"], df[cols[0] + " Y"]):
+    ax[0].plot(x, y, 'ro', ms = 3, mfc = 'r', clip_on=False, zorder=100)
+    ax[1].plot(x, y, 'ro', ms = 3, mfc = 'r', clip_on=False, zorder=100)
+
+for x,y in zip(df[cols[1] + " X"], df[cols[1] + " Y"]):
+    ax[0].plot(x, y, 'go', ms = 3, mfc = 'g', clip_on=False, zorder=100)
+    ax[2].plot(x, y, 'go', ms = 3, mfc = 'g', clip_on=False, zorder=100)
+
+fig.tight_layout()
+fig.savefig("out/2DSquarePointsB.png", bbox_inches='tight')
+fig.savefig("out/2DSquarePointsB.pdf", bbox_inches='tight')
